@@ -3,11 +3,11 @@ Fractal Forest Drawing App is an interactive, web-based drawing tool that lets y
 
 -----
 ## Tutorials Link
-- https://iluvdata.org/drawgem/tutorials/
+- https://iluvdata.org/fractalforest/tutorials/
 -----
 ## Live Demo Link
 - https://jsale.github.io/fractal_drawing_v2/
- ![alt text](https://www.iluvdata.org/drawgem/images/Screenshot1sm.png)
+ ![alt text](https://www.iluvdata.org/fractalforest/images/Screenshot1sm.png)
 
 -----
 ## ✨ Features
