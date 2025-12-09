@@ -47,6 +47,10 @@
             <option value="flower">Flower</option>
             <option value="vine">Vine</option>
             <option value="clouds">Clouds</option>
+            <option value="lightning">Lightning</option>
+            <option value="grass">Grass</option>
+            <option value="sierpinski">Sierpinski Gasket</option>
+            <option value="dragon">Dragon Curve</option>
             <option value="eraser">Eraser</option>
           </select>
     
@@ -240,7 +244,58 @@
                   <input id="cloudDrift" type="range" min="0" max="100" step="1" value="20" title="How far the clouds drift from their original position.">
               </div>
             </div>
-    
+
+            <div id="lightningParams" style="display:none">
+              <div class="param-row"><label for="lightningDepth">Branch Depth</label><input id="lightningDepthValue" type="number" min="1" max="5" value="3"></div>
+              <input id="lightningDepth" type="range" min="1" max="5" value="3" title="How many times the lightning branches. Higher values create more complex bolts.">
+              <div class="param-row"><label for="lightningSegmentLength">Segment Length</label><input id="lightningSegmentLengthValue" type="number" min="5" max="50" value="15"></div>
+              <input id="lightningSegmentLength" type="range" min="5" max="50" value="15" title="Length of each lightning segment in pixels.">
+              <div class="param-row"><label for="lightningJaggedness">Jaggedness</label><input id="lightningJaggednessValue" type="number" min="5" max="100" value="30"></div>
+              <input id="lightningJaggedness" type="range" min="5" max="100" value="30" title="How jagged and chaotic the lightning appears.">
+              <div class="param-row"><label for="lightningBranchProb">Branch Probability</label><input id="lightningBranchProbValue" type="number" min="0" max="0.5" step="0.01" value="0.15"></div>
+              <input id="lightningBranchProb" type="range" min="0" max="0.5" step="0.01" value="0.15" title="Probability of lightning branching at each segment.">
+              <div class="param-row"><label for="lightningWidth">Bolt Width</label><input id="lightningWidthValue" type="number" min="1" max="10" value="3"></div>
+              <input id="lightningWidth" type="range" min="1" max="10" value="3" title="The width of the lightning bolt in pixels.">
+            </div>
+
+            <div id="grassParams" style="display:none">
+              <div class="param-row"><label for="grassDensity">Blade Density</label><input id="grassDensityValue" type="number" min="10" max="200" value="50"></div>
+              <input id="grassDensity" type="range" min="10" max="200" value="50" title="Number of grass blades per patch.">
+              <div class="param-row"><label for="grassWidth">Patch Width</label><input id="grassWidthValue" type="number" min="20" max="400" value="100"></div>
+              <input id="grassWidth" type="range" min="20" max="400" value="100" title="The width of the grass patch in pixels.">
+              <div class="param-row"><label for="grassMinHeight">Min Height</label><input id="grassMinHeightValue" type="number" min="5" max="100" value="15"></div>
+              <input id="grassMinHeight" type="range" min="5" max="100" value="15" title="Minimum height of grass blades.">
+              <div class="param-row"><label for="grassMaxHeight">Max Height</label><input id="grassMaxHeightValue" type="number" min="10" max="200" value="40"></div>
+              <input id="grassMaxHeight" type="range" min="10" max="200" value="40" title="Maximum height of grass blades.">
+              <div class="param-row"><label for="grassBend">Bend Amount</label><input id="grassBendValue" type="number" min="0" max="1" step="0.01" value="0.3"></div>
+              <input id="grassBend" type="range" min="0" max="1" step="0.01" value="0.3" title="How much the grass blades bend and curve.">
+              <div class="param-row"><label for="grassMinThickness">Min Thickness</label><input id="grassMinThicknessValue" type="number" min="0.5" max="5" step="0.1" value="1"></div>
+              <input id="grassMinThickness" type="range" min="0.5" max="5" step="0.1" value="1" title="Minimum thickness of grass blades.">
+              <div class="param-row"><label for="grassMaxThickness">Max Thickness</label><input id="grassMaxThicknessValue" type="number" min="0.5" max="5" step="0.1" value="2"></div>
+              <input id="grassMaxThickness" type="range" min="0.5" max="5" step="0.1" value="2" title="Maximum thickness of grass blades.">
+            </div>
+
+            <div id="sierpinskiParams" style="display:none">
+              <div class="param-row"><label for="sierpinskiIterations">Iterations</label><input id="sierpinskiIterationsValue" type="number" min="1" max="8" value="5"></div>
+              <input id="sierpinskiIterations" type="range" min="1" max="8" value="5" title="Number of recursive subdivisions. Higher values create more detailed gaskets.">
+              <div class="param-row"><label for="sierpinskiSize">Size</label><input id="sierpinskiSizeValue" type="number" min="50" max="500" value="200"></div>
+              <input id="sierpinskiSize" type="range" min="50" max="500" value="200" title="The size of the Sierpinski gasket.">
+              <div class="param-row"><label for="sierpinskiStroke">Line Width</label><input id="sierpinskiStrokeValue" type="number" min="0.5" max="5" step="0.1" value="1"></div>
+              <input id="sierpinskiStroke" type="range" min="0.5" max="5" step="0.1" value="1" title="The width of the triangle outlines.">
+              <label style="display:block;margin-top:8px;">
+                <input type="checkbox" id="sierpinskiFilled" title="Fill the triangles instead of just outlining them."> Fill Triangles
+              </label>
+            </div>
+
+            <div id="dragonParams" style="display:none">
+              <div class="param-row"><label for="dragonIterations">Iterations</label><input id="dragonIterationsValue" type="number" min="1" max="15" value="10"></div>
+              <input id="dragonIterations" type="range" min="1" max="15" value="10" title="Number of L-system iterations. Higher values create more complex curves. (Max 15 for performance)">
+              <div class="param-row"><label for="dragonStep">Step Size</label><input id="dragonStepValue" type="number" min="1" max="20" value="5"></div>
+              <input id="dragonStep" type="range" min="1" max="20" value="5" title="Length of each step in pixels.">
+              <div class="param-row"><label for="dragonStroke">Line Width</label><input id="dragonStrokeValue" type="number" min="0.5" max="10" step="0.1" value="2"></div>
+              <input id="dragonStroke" type="range" min="0.5" max="10" step="0.1" value="2" title="The width of the dragon curve line.">
+            </div>
+
             <div id="otherScaleControls" style="margin-top:10px">
               <div class="param-row"><label for="otherScaleMin">Non-tree scale MIN</label><input id="otherScaleMinValue" type="number" min="0.2" max="3" step="0.01" value="0.8"></div>
               <input id="otherScaleMin" type="range" min="0.2" max="3" step="0.01" value="0.8" title="The minimum random size multiplier for non-tree objects.">

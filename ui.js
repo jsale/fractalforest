@@ -179,6 +179,47 @@ const windAmpValueEl = document.getElementById('windAmpValue');
 const windSpeedEl    = document.getElementById('windSpeed');
 const windSpeedValueEl = document.getElementById('windSpeedValue');
 
+const lightningDepthEl = document.getElementById('lightningDepth');
+const lightningDepthValueEl = document.getElementById('lightningDepthValue');
+const lightningSegmentLengthEl = document.getElementById('lightningSegmentLength');
+const lightningSegmentLengthValueEl = document.getElementById('lightningSegmentLengthValue');
+const lightningJaggednessEl = document.getElementById('lightningJaggedness');
+const lightningJaggednessValueEl = document.getElementById('lightningJaggednessValue');
+const lightningBranchProbEl = document.getElementById('lightningBranchProb');
+const lightningBranchProbValueEl = document.getElementById('lightningBranchProbValue');
+const lightningWidthEl = document.getElementById('lightningWidth');
+const lightningWidthValueEl = document.getElementById('lightningWidthValue');
+
+const grassDensityEl = document.getElementById('grassDensity');
+const grassDensityValueEl = document.getElementById('grassDensityValue');
+const grassWidthEl = document.getElementById('grassWidth');
+const grassWidthValueEl = document.getElementById('grassWidthValue');
+const grassMinHeightEl = document.getElementById('grassMinHeight');
+const grassMinHeightValueEl = document.getElementById('grassMinHeightValue');
+const grassMaxHeightEl = document.getElementById('grassMaxHeight');
+const grassMaxHeightValueEl = document.getElementById('grassMaxHeightValue');
+const grassBendEl = document.getElementById('grassBend');
+const grassBendValueEl = document.getElementById('grassBendValue');
+const grassMinThicknessEl = document.getElementById('grassMinThickness');
+const grassMinThicknessValueEl = document.getElementById('grassMinThicknessValue');
+const grassMaxThicknessEl = document.getElementById('grassMaxThickness');
+const grassMaxThicknessValueEl = document.getElementById('grassMaxThicknessValue');
+
+const sierpinskiIterationsEl = document.getElementById('sierpinskiIterations');
+const sierpinskiIterationsValueEl = document.getElementById('sierpinskiIterationsValue');
+const sierpinskiSizeEl = document.getElementById('sierpinskiSize');
+const sierpinskiSizeValueEl = document.getElementById('sierpinskiSizeValue');
+const sierpinskiStrokeEl = document.getElementById('sierpinskiStroke');
+const sierpinskiStrokeValueEl = document.getElementById('sierpinskiStrokeValue');
+const sierpinskiFilledEl = document.getElementById('sierpinskiFilled');
+
+const dragonIterationsEl = document.getElementById('dragonIterations');
+const dragonIterationsValueEl = document.getElementById('dragonIterationsValue');
+const dragonStepEl = document.getElementById('dragonStep');
+const dragonStepValueEl = document.getElementById('dragonStepValue');
+const dragonStrokeEl = document.getElementById('dragonStroke');
+const dragonStrokeValueEl = document.getElementById('dragonStrokeValue');
+
 /* ===================== Mobile Menu Toggle ===================== */
 function toggleMenu() {
     controls.classList.toggle('is-visible');
@@ -231,6 +272,17 @@ const bindings = [
     ['cloudBlur', 'cloudBlurValue'],
     ['cloudShadowX', 'cloudShadowXValue'], ['cloudShadowY', 'cloudShadowYValue'],
     ['cloudSpeed', 'cloudSpeedValue'], ['cloudDrift', 'cloudDriftValue'],
+    ['lightningDepth', 'lightningDepthValue'], ['lightningSegmentLength', 'lightningSegmentLengthValue'],
+    ['lightningJaggedness', 'lightningJaggednessValue'], ['lightningBranchProb', 'lightningBranchProbValue'],
+    ['lightningWidth', 'lightningWidthValue'],
+    ['grassDensity', 'grassDensityValue'], ['grassWidth', 'grassWidthValue'],
+    ['grassMinHeight', 'grassMinHeightValue'], ['grassMaxHeight', 'grassMaxHeightValue'],
+    ['grassBend', 'grassBendValue'], ['grassMinThickness', 'grassMinThicknessValue'],
+    ['grassMaxThickness', 'grassMaxThicknessValue'],
+    ['sierpinskiIterations', 'sierpinskiIterationsValue'], ['sierpinskiSize', 'sierpinskiSizeValue'],
+    ['sierpinskiStroke', 'sierpinskiStrokeValue'],
+    ['dragonIterations', 'dragonIterationsValue'], ['dragonStep', 'dragonStepValue'],
+    ['dragonStroke', 'dragonStrokeValue'],
     ['otherScaleMin', 'otherScaleMinValue'], ['otherScaleMax', 'otherScaleMaxValue'],
     ['eraserSize', 'eraserSizeValue'],
     ['newObjectAlphaSlider', 'newObjectAlphaValue'], ['levelAlpha', 'levelAlphaValue'],
@@ -264,8 +316,12 @@ function updateModeUI(){
   show('flowerParams', mode==='flower');
   show('vineParams',   mode==='vine');
   show('cloudParams',  mode==='clouds');
+  show('lightningParams', mode==='lightning');
+  show('grassParams',  mode==='grass');
+  show('sierpinskiParams', mode==='sierpinski');
+  show('dragonParams', mode==='dragon');
   show('eraserParams', mode==='eraser');
-  
+
   if(levelEditBox) levelEditBox.style.display = (mode==='tree') ? levelEditBox.style.display : 'none';
 }
 if (modeSelect) modeSelect.addEventListener('change', updateModeUI);
