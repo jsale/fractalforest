@@ -49,6 +49,8 @@
             <option value="clouds">Clouds</option>
             <option value="lightning">Lightning</option>
             <option value="grass">Grass</option>
+            <option value="sierpinski">Sierpinski Gasket</option>
+            <option value="dragon">Dragon Curve</option>
             <option value="eraser">Eraser</option>
           </select>
     
@@ -271,6 +273,27 @@
               <input id="grassMinThickness" type="range" min="0.5" max="5" step="0.1" value="1" title="Minimum thickness of grass blades.">
               <div class="param-row"><label for="grassMaxThickness">Max Thickness</label><input id="grassMaxThicknessValue" type="number" min="0.5" max="5" step="0.1" value="2"></div>
               <input id="grassMaxThickness" type="range" min="0.5" max="5" step="0.1" value="2" title="Maximum thickness of grass blades.">
+            </div>
+
+            <div id="sierpinskiParams" style="display:none">
+              <div class="param-row"><label for="sierpinskiIterations">Iterations</label><input id="sierpinskiIterationsValue" type="number" min="1" max="8" value="5"></div>
+              <input id="sierpinskiIterations" type="range" min="1" max="8" value="5" title="Number of recursive subdivisions. Higher values create more detailed gaskets.">
+              <div class="param-row"><label for="sierpinskiSize">Size</label><input id="sierpinskiSizeValue" type="number" min="50" max="500" value="200"></div>
+              <input id="sierpinskiSize" type="range" min="50" max="500" value="200" title="The size of the Sierpinski gasket.">
+              <div class="param-row"><label for="sierpinskiStroke">Line Width</label><input id="sierpinskiStrokeValue" type="number" min="0.5" max="5" step="0.1" value="1"></div>
+              <input id="sierpinskiStroke" type="range" min="0.5" max="5" step="0.1" value="1" title="The width of the triangle outlines.">
+              <label style="display:block;margin-top:8px;">
+                <input type="checkbox" id="sierpinskiFilled" title="Fill the triangles instead of just outlining them."> Fill Triangles
+              </label>
+            </div>
+
+            <div id="dragonParams" style="display:none">
+              <div class="param-row"><label for="dragonIterations">Iterations</label><input id="dragonIterationsValue" type="number" min="1" max="15" value="10"></div>
+              <input id="dragonIterations" type="range" min="1" max="15" value="10" title="Number of L-system iterations. Higher values create more complex curves. (Max 15 for performance)">
+              <div class="param-row"><label for="dragonStep">Step Size</label><input id="dragonStepValue" type="number" min="1" max="20" value="5"></div>
+              <input id="dragonStep" type="range" min="1" max="20" value="5" title="Length of each step in pixels.">
+              <div class="param-row"><label for="dragonStroke">Line Width</label><input id="dragonStrokeValue" type="number" min="0.5" max="10" step="0.1" value="2"></div>
+              <input id="dragonStroke" type="range" min="0.5" max="10" step="0.1" value="2" title="The width of the dragon curve line.">
             </div>
 
             <div id="otherScaleControls" style="margin-top:10px">

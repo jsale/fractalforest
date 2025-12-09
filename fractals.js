@@ -819,3 +819,117 @@ function drawGrass(ctx, grass) {
 
     ctx.restore();
 }
+
+/* ===================== Sierpinski Gasket Functions ===================== */
+function buildSierpinskiGasket(gasket) {
+    gasket.triangles = [];
+
+    function subdivide(p1, p2, p3, depth) {
+        if (depth === 0) {
+            gasket.triangles.push([p1, p2, p3]);
+            return;
+        }
+
+        const m1 = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+        const m2 = { x: (p2.x + p3.x) / 2, y: (p2.y + p3.y) / 2 };
+        const m3 = { x: (p3.x + p1.x) / 2, y: (p3.y + p1.y) / 2 };
+
+        subdivide(p1, m1, m3, depth - 1);
+        subdivide(m1, p2, m2, depth - 1);
+        subdivide(m3, m2, p3, depth - 1);
+    }
+
+    // Create initial equilateral triangle
+    const size = gasket.size;
+    const height = (Math.sqrt(3) / 2) * size;
+    const p1 = { x: gasket.cx, y: gasket.cy - (2 * height) / 3 };
+    const p2 = { x: gasket.cx - size / 2, y: gasket.cy + height / 3 };
+    const p3 = { x: gasket.cx + size / 2, y: gasket.cy + height / 3 };
+
+    subdivide(p1, p2, p3, gasket.iterations);
+}
+
+function drawSierpinskiGasket(ctx, gasket) {
+    ctx.save();
+    ctx.strokeStyle = gasket.color || '#00ffff';
+    ctx.lineWidth = gasket.stroke || 1;
+    ctx.globalAlpha = gasket.alpha != null ? gasket.alpha : 1.0;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (gasket.filled) {
+        ctx.fillStyle = gasket.color || '#00ffff';
+        for (const [p1, p2, p3] of gasket.triangles) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.closePath();
+            ctx.fill();
+        }
+    } else {
+        for (const [p1, p2, p3] of gasket.triangles) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.closePath();
+            ctx.stroke();
+        }
+    }
+
+    ctx.restore();
+}
+
+/* ===================== Dragon Curve Functions ===================== */
+function buildDragonCurve(dragon) {
+    // Generate L-system sequence
+    let sequence = 'F';
+    for (let i = 0; i < dragon.iterations; i++) {
+        let newSeq = '';
+        for (let char of sequence) {
+            if (char === 'F') newSeq += 'F+G';
+            else if (char === 'G') newSeq += 'F-G';
+            else newSeq += char;
+        }
+        sequence = newSeq;
+    }
+
+    dragon.segments = [];
+    let x = dragon.cx, y = dragon.cy, angle = 0;
+    const step = dragon.step;
+
+    for (let char of sequence) {
+        if (char === 'F' || char === 'G') {
+            const nx = x + step * Math.cos(angle);
+            const ny = y + step * Math.sin(angle);
+            dragon.segments.push({ x1: x, y1: y, x2: nx, y2: ny });
+            x = nx;
+            y = ny;
+        } else if (char === '+') {
+            angle += Math.PI / 2;
+        } else if (char === '-') {
+            angle -= Math.PI / 2;
+        }
+    }
+}
+
+function drawDragonCurve(ctx, dragon) {
+    ctx.save();
+    ctx.strokeStyle = dragon.color || '#ff1493';
+    ctx.lineWidth = dragon.stroke || 2;
+    ctx.globalAlpha = dragon.alpha != null ? dragon.alpha : 1.0;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    if (dragon.segments.length > 0) {
+        ctx.moveTo(dragon.segments[0].x1, dragon.segments[0].y1);
+        for (const seg of dragon.segments) {
+            ctx.lineTo(seg.x2, seg.y2);
+        }
+    }
+    ctx.stroke();
+
+    ctx.restore();
+}

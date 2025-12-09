@@ -205,6 +205,21 @@ const grassMinThicknessValueEl = document.getElementById('grassMinThicknessValue
 const grassMaxThicknessEl = document.getElementById('grassMaxThickness');
 const grassMaxThicknessValueEl = document.getElementById('grassMaxThicknessValue');
 
+const sierpinskiIterationsEl = document.getElementById('sierpinskiIterations');
+const sierpinskiIterationsValueEl = document.getElementById('sierpinskiIterationsValue');
+const sierpinskiSizeEl = document.getElementById('sierpinskiSize');
+const sierpinskiSizeValueEl = document.getElementById('sierpinskiSizeValue');
+const sierpinskiStrokeEl = document.getElementById('sierpinskiStroke');
+const sierpinskiStrokeValueEl = document.getElementById('sierpinskiStrokeValue');
+const sierpinskiFilledEl = document.getElementById('sierpinskiFilled');
+
+const dragonIterationsEl = document.getElementById('dragonIterations');
+const dragonIterationsValueEl = document.getElementById('dragonIterationsValue');
+const dragonStepEl = document.getElementById('dragonStep');
+const dragonStepValueEl = document.getElementById('dragonStepValue');
+const dragonStrokeEl = document.getElementById('dragonStroke');
+const dragonStrokeValueEl = document.getElementById('dragonStrokeValue');
+
 /* ===================== Mobile Menu Toggle ===================== */
 function toggleMenu() {
     controls.classList.toggle('is-visible');
@@ -264,6 +279,10 @@ const bindings = [
     ['grassMinHeight', 'grassMinHeightValue'], ['grassMaxHeight', 'grassMaxHeightValue'],
     ['grassBend', 'grassBendValue'], ['grassMinThickness', 'grassMinThicknessValue'],
     ['grassMaxThickness', 'grassMaxThicknessValue'],
+    ['sierpinskiIterations', 'sierpinskiIterationsValue'], ['sierpinskiSize', 'sierpinskiSizeValue'],
+    ['sierpinskiStroke', 'sierpinskiStrokeValue'],
+    ['dragonIterations', 'dragonIterationsValue'], ['dragonStep', 'dragonStepValue'],
+    ['dragonStroke', 'dragonStrokeValue'],
     ['otherScaleMin', 'otherScaleMinValue'], ['otherScaleMax', 'otherScaleMaxValue'],
     ['eraserSize', 'eraserSizeValue'],
     ['newObjectAlphaSlider', 'newObjectAlphaValue'], ['levelAlpha', 'levelAlphaValue'],
@@ -299,6 +318,8 @@ function updateModeUI(){
   show('cloudParams',  mode==='clouds');
   show('lightningParams', mode==='lightning');
   show('grassParams',  mode==='grass');
+  show('sierpinskiParams', mode==='sierpinski');
+  show('dragonParams', mode==='dragon');
   show('eraserParams', mode==='eraser');
 
   if(levelEditBox) levelEditBox.style.display = (mode==='tree') ? levelEditBox.style.display : 'none';
