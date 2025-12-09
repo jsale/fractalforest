@@ -19,6 +19,8 @@ let snowflakes = [];
 let flowers = [];
 let vines = [];
 let clouds = [];
+let lightning = [];
+let grass = [];
 let eraserStrokes = [];
 let selectedTreeIndex = null;
 let selectedLevelIndex = null;
@@ -93,6 +95,8 @@ function restoreFrom(state){
   flowers = scene.filter(op => op.type === 'flower').map(op => op.data);
   vines = scene.filter(op => op.type === 'vine').map(op => op.data);
   clouds = scene.filter(op => op.type === 'clouds').map(op => op.data);
+  lightning = scene.filter(op => op.type === 'lightning').map(op => op.data);
+  grass = scene.filter(op => op.type === 'grass').map(op => op.data);
   eraserStrokes = scene.filter(op => op.type === 'eraser').map(op => op.data);
 
   selectedTreeIndex = null; selectedLevelIndex = null;
@@ -163,6 +167,8 @@ function redrawAll(){
             case 'flower':    drawFlowers(treeCtx, op.data); break;
             case 'vine':      drawVines(treeCtx, op.data); break;
             case 'clouds':    drawClouds(treeCtx, op.data); break;
+            case 'lightning': drawLightning(treeCtx, op.data); break;
+            case 'grass':     drawGrass(treeCtx, op.data); break;
             case 'eraser':
                 applyEraser(treeCtx, op.data);
                 break;
@@ -189,10 +195,10 @@ function redrawAnimatedScene(time) {
 
     for (const op of scene) {
         switch(op.type) {
-            case 'tree':      
+            case 'tree':
                 (animateWindEl && animateWindEl.checked) ? drawAnimatedTree(treeCtx, op.data, time) : drawTreeFromSegments(treeCtx, op.data);
                 break;
-            case 'clouds':    
+            case 'clouds':
                 (animateCloudsEl && animateCloudsEl.checked) ? drawAnimatedClouds(treeCtx, op.data, time) : drawClouds(treeCtx, op.data);
                 break;
             case 'fern':      drawFernInstance(treeCtx, op.data); break;
@@ -202,6 +208,8 @@ function redrawAnimatedScene(time) {
             case 'snowflake': drawSnowflakes(treeCtx, op.data); break;
             case 'flower':    drawFlowers(treeCtx, op.data); break;
             case 'vine':      drawVines(treeCtx, op.data); break;
+            case 'lightning': drawLightning(treeCtx, op.data); break;
+            case 'grass':     drawGrass(treeCtx, op.data); break;
             case 'eraser':
                 applyEraser(treeCtx, op.data);
                 break;
@@ -405,18 +413,60 @@ function createCloudFromUI(cx, cy){
 function createFernFromUI(cx, cy) {
     const sizeBase = Math.min(treeCanvas.width, treeCanvas.height);
     const scale = getNonTreeScale();
-    const f = { 
-        cx: cx, 
-        cy: cy, 
-        size: sizeBase * parseFloat(fernSizeValueEl.value) * scale, 
+    const f = {
+        cx: cx,
+        cy: cy,
+        size: sizeBase * parseFloat(fernSizeValueEl.value) * scale,
         points: parseInt(fernPointsValueEl.value, 10),
-        color: pickNonTreeColor(nextStampSeed()), 
-        rngSeed: nextStampSeed(), 
+        color: pickNonTreeColor(nextStampSeed()),
+        rngSeed: nextStampSeed(),
         alpha: getNewObjectAlpha(),
         isSpaceFern: spaceFernsEl.checked
     };
     if (f.isSpaceFern && typeof gtag === 'function') gtag('event', 'use_feature', { 'feature_name': 'space_ferns' });
     return f;
+}
+
+function createLightningFromUI(x1, y1, x2, y2) {
+    const bolt = {
+        x1: x1,
+        y1: y1,
+        x2: x2,
+        y2: y2,
+        depth: parseInt(lightningDepthValueEl.value, 10),
+        segmentLength: parseFloat(lightningSegmentLengthValueEl.value),
+        minSegmentLength: 5,
+        jaggedness: parseFloat(lightningJaggednessValueEl.value),
+        branchProbability: parseFloat(lightningBranchProbValueEl.value),
+        width: parseFloat(lightningWidthValueEl.value),
+        color: pickNonTreeColor(nextStampSeed()),
+        rngSeed: nextStampSeed(),
+        alpha: getNewObjectAlpha(),
+        segments: []
+    };
+    buildLightning(bolt);
+    return bolt;
+}
+
+function createGrassFromUI(cx, cy) {
+    const scale = getNonTreeScale();
+    const g = {
+        cx: cx,
+        cy: cy,
+        density: parseInt(grassDensityValueEl.value, 10),
+        width: parseFloat(grassWidthValueEl.value) * scale,
+        minHeight: parseFloat(grassMinHeightValueEl.value) * scale,
+        maxHeight: parseFloat(grassMaxHeightValueEl.value) * scale,
+        bendAmount: parseFloat(grassBendValueEl.value),
+        minThickness: parseFloat(grassMinThicknessValueEl.value),
+        maxThickness: parseFloat(grassMaxThicknessValueEl.value),
+        color: pickNonTreeColor(nextStampSeed()),
+        rngSeed: nextStampSeed(),
+        alpha: getNewObjectAlpha(),
+        blades: []
+    };
+    buildGrassPatch(g);
+    return g;
 }
 
 function hitTestBranch(p){
@@ -450,8 +500,8 @@ function onPointerDown(e){
   const p = getP(e);
   lastP = p;
   const mode = modeSelect.value;
-  
-  if (mode === 'mountain') {
+
+  if (mode === 'mountain' || mode === 'lightning') {
     drawing = true;
     dragStartPoint = p;
     return;
@@ -492,10 +542,10 @@ function onPointerMove(e){
   const mode = modeSelect.value;
 
 
-  if (mode === 'mountain' && dragStartPoint) {
+  if ((mode === 'mountain' || mode === 'lightning') && dragStartPoint) {
       eraserCtx.clearRect(0,0,eraserCanvas.width, eraserCanvas.height);
       eraserCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-      eraserCtx.lineWidth = 1;
+      eraserCtx.lineWidth = mode === 'lightning' ? 3 : 1;
       eraserCtx.beginPath();
       eraserCtx.moveTo(dragStartPoint.x, dragStartPoint.y);
       eraserCtx.lineTo(p.x, p.y);
@@ -542,6 +592,18 @@ function onPointerEnd(e){
       eraserCtx.clearRect(0,0,eraserCanvas.width, eraserCanvas.height);
       dragStartPoint = null;
       if (typeof gtag === 'function') gtag('event', 'create_object', { 'type': 'mountain' });
+  }
+
+  if (mode === 'lightning' && dragStartPoint) {
+      const bolt = createLightningFromUI(dragStartPoint.x, dragStartPoint.y, p.x, p.y);
+      lightning.push(bolt);
+      scene.push({type: 'lightning', data: bolt});
+      pushHistory();
+      updateObjectCount();
+      if (!isAnimating()) redrawAll();
+      eraserCtx.clearRect(0,0,eraserCanvas.width, eraserCanvas.height);
+      dragStartPoint = null;
+      if (typeof gtag === 'function') gtag('event', 'create_object', { 'type': 'lightning' });
   }
   
   drawing = false;
@@ -642,8 +704,12 @@ function spawnAt(p){
     const body = createCelestialFromUI(p.x, p.y);
     celestials.push(body);
     newOp = {type: 'celestial', data: body};
+  } else if(mode==='grass'){
+    const g = createGrassFromUI(p.x, p.y);
+    grass.push(g);
+    newOp = {type: 'grass', data: g};
   }
-  
+
   if (newOp) {
       scene.push(newOp);
       pushHistory();
@@ -667,7 +733,7 @@ const randomizeTreeBtn = document.getElementById('randomizeTreeBtn');
 
 if (undoBtn) undoBtn.addEventListener('click', undo);
 if (redoBtn) redoBtn.addEventListener('click', redo);
-if (clearBtn) clearBtn.addEventListener('click', ()=>{ scene=[]; trees=[]; ferns=[]; paths=[]; mountains=[]; celestials=[]; snowflakes=[]; flowers=[]; vines=[]; clouds=[]; eraserStrokes=[]; selectedTreeIndex=null; selectedLevelIndex=null; pushHistory(); if (!isAnimating()) redrawAll(); updateObjectCount(); if (typeof gtag === 'function') gtag('event', 'clear_canvas'); });
+if (clearBtn) clearBtn.addEventListener('click', ()=>{ scene=[]; trees=[]; ferns=[]; paths=[]; mountains=[]; celestials=[]; snowflakes=[]; flowers=[]; vines=[]; clouds=[]; lightning=[]; grass=[]; eraserStrokes=[]; selectedTreeIndex=null; selectedLevelIndex=null; pushHistory(); if (!isAnimating()) redrawAll(); updateObjectCount(); if (typeof gtag === 'function') gtag('event', 'clear_canvas'); });
 if (saveBtn) saveBtn.addEventListener('click', ()=>{ const out = document.createElement('canvas'); out.width = treeCanvas.width; out.height = treeCanvas.height; const octx = out.getContext('2d'); drawBackground(octx); octx.drawImage(treeCanvas,0,0); const link = document.createElement('a'); link.download=`fractal-forest_${getDateTimeStamp()}.png`; link.href = out.toDataURL('image/png'); link.click(); if (typeof gtag === 'function') gtag('event', 'save_artwork', { 'format': 'png' }); });
 if (playbackBtn) playbackBtn.addEventListener('click', playHistory);
 if (exportSessionBtn) exportSessionBtn.addEventListener('click', exportSession);
@@ -913,6 +979,8 @@ function buildSVG(){
   parts.push(`<g id="flowers" stroke-linecap="round" stroke-linejoin="round" fill="none">`); for (const fl of flowers){ parts.push(`<g class="flower" opacity="${fl.alpha ?? 1}" stroke="${escapeAttr(fl.color || '#ff88cc')}" stroke-width="${fl.stroke || 1.5}">`); for (const seg of fl.segments){ parts.push(`<line x1="${seg.x1}" y1="${seg.y1}" x2="${seg.x2}" y2="${seg.y2}"/>`); } parts.push(`</g>`); } parts.push(`</g>`);
   parts.push(`<g id="vines" stroke-linecap="round" stroke-linejoin="round" fill="none">`); for (const v of vines){ parts.push(`<polyline class="vine" points="${v.points.map(pt=>`${pt.x},${pt.y}`).join(' ')}" stroke="${escapeAttr(v.color || '#8fd18f')}" stroke-width="${v.stroke || 2}" stroke-opacity="${v.alpha ?? 1}" fill="none"/>`); } parts.push(`</g>`);
   parts.push(`<g id="clouds">`); for (const c of clouds){ parts.push(`<g class="cloud" opacity="${c.alpha ?? 1}">`); for (const k of c.circles){ parts.push(`<circle cx="${c.cx + k.offsetX}" cy="${c.cy + k.offsetY}" r="${Math.max(0.5,k.r)}" fill="${escapeAttr(k.color || '#ffffff')}"/>`); } parts.push(`</g>`); } parts.push(`</g>`);
+  parts.push(`<g id="lightning" stroke-linecap="round" stroke-linejoin="round">`); for (const bolt of lightning){ parts.push(`<g class="lightning" opacity="${bolt.alpha ?? 1}" stroke="${escapeAttr(bolt.color || '#a0d0ff')}">`); for (const seg of bolt.segments){ parts.push(`<line x1="${seg.x1}" y1="${seg.y1}" x2="${seg.x2}" y2="${seg.y2}" stroke-width="${(seg.width || bolt.width) * 0.3}"/>`); } parts.push(`</g>`); } parts.push(`</g>`);
+  parts.push(`<g id="grass" stroke-linecap="round" stroke-linejoin="round" fill="none">`); for (const g of grass){ parts.push(`<g class="grass" opacity="${g.alpha ?? 1}" stroke="${escapeAttr(g.color || '#4a7c59')}">`); for (const blade of g.blades){ parts.push(`<path d="M${blade.x1},${blade.y1} Q${blade.cpx},${blade.cpy} ${blade.x2},${blade.y2}" stroke-width="${blade.thickness}"/>`); } parts.push(`</g>`); } parts.push(`</g>`);
   parts.push(`<g id="trees" stroke-linecap="round" stroke-linejoin="round" fill="none">`);
   for (const t of trees) {
       const rand = mulberry32(t.rngSeed);

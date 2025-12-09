@@ -683,3 +683,139 @@ function drawMountainRange(ctx, mtn) {
     ctx.fill();
     ctx.restore();
 }
+
+/* ===================== Lightning Functions ===================== */
+function buildLightning(bolt) {
+    const rand = mulberry32(bolt.rngSeed);
+    bolt.segments = [];
+
+    function branch(x1, y1, x2, y2, depth, width) {
+        if (depth === 0) return;
+
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.sqrt(dx * dx + dy * dy);
+
+        if (len < bolt.minSegmentLength) {
+            bolt.segments.push({ x1, y1, x2, y2, alpha: 1, width });
+            return;
+        }
+
+        const segments = Math.max(1, Math.floor(len / bolt.segmentLength));
+        let px = x1, py = y1;
+
+        for (let i = 1; i <= segments; i++) {
+            const t = i / segments;
+            const nx = x1 + dx * t + (rand() - 0.5) * bolt.jaggedness;
+            const ny = y1 + dy * t + (rand() - 0.5) * bolt.jaggedness;
+
+            bolt.segments.push({ x1: px, y1: py, x2: nx, y2: ny, alpha: 1, width });
+
+            // Random branching
+            if (rand() < bolt.branchProbability && depth > 1) {
+                const branchAngle = (rand() - 0.5) * Math.PI / 2;
+                const branchLen = len * (0.3 + rand() * 0.3);
+                const angle = Math.atan2(dy, dx) + branchAngle;
+                const bx = nx + Math.cos(angle) * branchLen;
+                const by = ny + Math.sin(angle) * branchLen;
+                branch(nx, ny, bx, by, depth - 1, width * 0.6);
+            }
+
+            px = nx; py = ny;
+        }
+
+        bolt.segments.push({ x1: px, y1: py, x2, y2, alpha: 1, width });
+    }
+
+    branch(bolt.x1, bolt.y1, bolt.x2, bolt.y2, bolt.depth, bolt.width);
+}
+
+function drawLightning(ctx, bolt) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalAlpha = bolt.alpha != null ? bolt.alpha : 1.0;
+
+    // Draw glow layers for dramatic effect
+    const glowLayers = [
+        { width: 3, alpha: 0.1, blur: 20 },
+        { width: 2, alpha: 0.3, blur: 10 },
+        { width: 1, alpha: 0.6, blur: 5 }
+    ];
+
+    for (const layer of glowLayers) {
+        ctx.shadowColor = bolt.color || '#a0d0ff';
+        ctx.shadowBlur = layer.blur;
+        ctx.globalAlpha = (bolt.alpha != null ? bolt.alpha : 1.0) * layer.alpha;
+
+        for (const seg of bolt.segments) {
+            ctx.strokeStyle = bolt.color || '#a0d0ff';
+            ctx.lineWidth = (seg.width || bolt.width) * layer.width;
+            ctx.beginPath();
+            ctx.moveTo(seg.x1, seg.y1);
+            ctx.lineTo(seg.x2, seg.y2);
+            ctx.stroke();
+        }
+    }
+
+    // Draw main bright bolt
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = bolt.alpha != null ? bolt.alpha : 1.0;
+    ctx.strokeStyle = '#ffffff';
+
+    for (const seg of bolt.segments) {
+        ctx.lineWidth = Math.max(0.5, (seg.width || bolt.width) * 0.3);
+        ctx.beginPath();
+        ctx.moveTo(seg.x1, seg.y1);
+        ctx.lineTo(seg.x2, seg.y2);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+/* ===================== Grass Functions ===================== */
+function buildGrassPatch(grass) {
+    const rand = mulberry32(grass.rngSeed);
+    grass.blades = [];
+
+    for (let i = 0; i < grass.density; i++) {
+        const offsetX = (rand() - 0.5) * grass.width;
+        const height = grass.minHeight + rand() * (grass.maxHeight - grass.minHeight);
+        const bend = (rand() - 0.5) * grass.bendAmount * height;
+        const baseX = grass.cx + offsetX;
+        const baseY = grass.cy;
+
+        // Quadratic curve for natural blade shape
+        grass.blades.push({
+            x1: baseX,
+            y1: baseY,
+            cpx: baseX + bend * 0.6,
+            cpy: baseY - height * 0.5,
+            x2: baseX + bend,
+            y2: baseY - height,
+            thickness: grass.minThickness + rand() * (grass.maxThickness - grass.minThickness)
+        });
+    }
+}
+
+function drawGrass(ctx, grass) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalAlpha = grass.alpha != null ? grass.alpha : 1.0;
+
+    // Sort blades back to front for natural layering
+    const sorted = grass.blades.slice().sort((a, b) => b.y2 - a.y2);
+
+    for (const blade of sorted) {
+        ctx.strokeStyle = grass.color || '#4a7c59';
+        ctx.lineWidth = blade.thickness;
+        ctx.beginPath();
+        ctx.moveTo(blade.x1, blade.y1);
+        ctx.quadraticCurveTo(blade.cpx, blade.cpy, blade.x2, blade.y2);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
