@@ -23,12 +23,20 @@ let lightning = [];
 let grass = [];
 let sierpinskiGaskets = [];
 let dragonCurves = [];
+let textures = [];
 let eraserStrokes = [];
 let selectedTreeIndex = null;
 let selectedLevelIndex = null;
 let drawing = false, lastP = null, currentStroke = null, captureEl = null, dragStartPoint = null;
 let dragSpacing = 4;
 let branchPalette = [];
+
+/* ===== Symmetry state ===== */
+let symmetryEnabled = false;
+let symmetryType = 'mirrorH';
+let radialCount = 6;
+let symmetryCenter = null; // Will be {x, y} or null for canvas center
+let settingSymmetryCenter = false;
 
 /* ==== History ==== */
 const history = [];
@@ -101,6 +109,7 @@ function restoreFrom(state){
   grass = scene.filter(op => op.type === 'grass').map(op => op.data);
   sierpinskiGaskets = scene.filter(op => op.type === 'sierpinski').map(op => op.data);
   dragonCurves = scene.filter(op => op.type === 'dragon').map(op => op.data);
+  textures = scene.filter(op => op.type === 'texture').map(op => op.data);
   eraserStrokes = scene.filter(op => op.type === 'eraser').map(op => op.data);
 
   selectedTreeIndex = null; selectedLevelIndex = null;
@@ -175,6 +184,7 @@ function redrawAll(){
             case 'grass':     drawGrass(treeCtx, op.data); break;
             case 'sierpinski': drawSierpinskiGasket(treeCtx, op.data); break;
             case 'dragon':    drawDragonCurve(treeCtx, op.data); break;
+            case 'texture':   drawTexture(treeCtx, op.data); break;
             case 'eraser':
                 applyEraser(treeCtx, op.data);
                 break;
@@ -218,6 +228,7 @@ function redrawAnimatedScene(time) {
             case 'grass':     drawGrass(treeCtx, op.data); break;
             case 'sierpinski': drawSierpinskiGasket(treeCtx, op.data); break;
             case 'dragon':    drawDragonCurve(treeCtx, op.data); break;
+            case 'texture':   drawTexture(treeCtx, op.data); break;
             case 'eraser':
                 applyEraser(treeCtx, op.data);
                 break;
@@ -510,6 +521,78 @@ function createDragonFromUI(cx, cy) {
     return dragon;
 }
 
+function createTextureFromUI(cx, cy) {
+    const texture = {
+        cx: cx,
+        cy: cy,
+        type: textureTypeEl ? textureTypeEl.value : 'stipple',
+        brushSize: parseFloat(textureBrushSizeValueEl.value),
+        density: parseFloat(textureDensityValueEl.value),
+        scale: parseFloat(textureScaleValueEl.value),
+        rotation: parseFloat(textureRotationValueEl.value),
+        randomness: parseFloat(textureRandomnessValueEl.value),
+        strokeWidth: parseFloat(textureStrokeValueEl.value),
+        color: pickNonTreeColor(nextStampSeed()),
+        rngSeed: nextStampSeed(),
+        alpha: getNewObjectAlpha(),
+        elements: []
+    };
+    buildTexture(texture);
+    return texture;
+}
+
+/* ===================== Symmetry helpers ===================== */
+function getSymmetryCenter() {
+    if (symmetryCenter) return symmetryCenter;
+    return { x: treeCanvas.width / 2, y: treeCanvas.height / 2 };
+}
+
+function getSymmetricPoints(x, y) {
+    if (!symmetryEnabled) return [{ x, y }];
+
+    const center = getSymmetryCenter();
+    const points = [{ x, y }];
+
+    switch(symmetryType) {
+        case 'mirrorH':
+            // Reflect across vertical center line
+            points.push({ x: center.x - (x - center.x), y });
+            break;
+
+        case 'mirrorV':
+            // Reflect across horizontal center line
+            points.push({ x, y: center.y - (y - center.y) });
+            break;
+
+        case 'mirrorBoth':
+            // Reflect across both axes (4-way)
+            const xReflect = center.x - (x - center.x);
+            const yReflect = center.y - (y - center.y);
+            points.push({ x: xReflect, y });
+            points.push({ x, y: yReflect });
+            points.push({ x: xReflect, y: yReflect });
+            break;
+
+        case 'radial':
+            // Rotate around center point
+            const dx = x - center.x;
+            const dy = y - center.y;
+            const angleStep = (Math.PI * 2) / radialCount;
+
+            for (let i = 1; i < radialCount; i++) {
+                const angle = angleStep * i;
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+                const rx = center.x + (dx * cos - dy * sin);
+                const ry = center.y + (dx * sin + dy * cos);
+                points.push({ x: rx, y: ry });
+            }
+            break;
+    }
+
+    return points;
+}
+
 function hitTestBranch(p){
   const tol=6, tol2=tol*tol;
   for(let ti=trees.length-1; ti>=0; ti--){
@@ -541,6 +624,19 @@ function onPointerDown(e){
   const p = getP(e);
   lastP = p;
   const mode = modeSelect.value;
+
+  // Handle symmetry center setting
+  if (settingSymmetryCenter) {
+    symmetryCenter = { x: p.x, y: p.y };
+    settingSymmetryCenter = false;
+    if (setSymmetryCenterBtnEl) setSymmetryCenterBtnEl.textContent = 'Click Canvas to Set Center';
+    if (symmetryCenterDisplayEl) {
+      symmetryCenterDisplayEl.textContent = `Center: (${Math.round(p.x)}, ${Math.round(p.y)})`;
+      symmetryCenterDisplayEl.style.display = 'block';
+    }
+    if (!isAnimating()) redrawAll();
+    return;
+  }
 
   if (mode === 'mountain' || mode === 'lightning') {
     drawing = true;
@@ -757,9 +853,68 @@ function spawnAt(p){
     const dragon = createDragonFromUI(p.x, p.y);
     dragonCurves.push(dragon);
     newOp = {type: 'dragon', data: dragon};
+  } else if(mode==='texture'){
+    const tex = createTextureFromUI(p.x, p.y);
+    textures.push(tex);
+    newOp = {type: 'texture', data: tex};
   }
 
   if (newOp) {
+      // Apply symmetry if enabled
+      if (symmetryEnabled && mode !== 'tree') {
+          const symPoints = getSymmetricPoints(p.x, p.y);
+          // Skip the first point as we already created it
+          for (let i = 1; i < symPoints.length; i++) {
+              const sp = symPoints[i];
+              let symObj = null;
+
+              if(mode==='fern'){
+                symObj = createFernFromUI(sp.x, sp.y);
+                ferns.push(symObj);
+              } else if(mode==='snowflake'){
+                symObj = createSnowflakeFromUI(sp.x, sp.y);
+                symObj.rngSeed = nextStampSeed();
+                symObj.color = pickNonTreeColor(symObj.rngSeed);
+                snowflakes.push(symObj);
+              } else if(mode==='flower'){
+                symObj = createFlowerFromUI(sp.x, sp.y);
+                symObj.rngSeed = nextStampSeed();
+                symObj.color = pickNonTreeColor(symObj.rngSeed);
+                flowers.push(symObj);
+              } else if(mode==='vine'){
+                symObj = createVineFromUI(sp.x, sp.y);
+                symObj.rngSeed = nextStampSeed();
+                const scale = getNonTreeScale();
+                symObj.length = Math.max(10, Math.round(symObj.length * scale));
+                symObj.step = 4 * scale;
+                symObj.color = pickNonTreeColor(symObj.rngSeed);
+                vines.push(symObj);
+              } else if(mode==='clouds'){
+                symObj = createCloudFromUI(sp.x, sp.y);
+                clouds.push(symObj);
+              } else if(mode==='celestial'){
+                symObj = createCelestialFromUI(sp.x, sp.y);
+                celestials.push(symObj);
+              } else if(mode==='grass'){
+                symObj = createGrassFromUI(sp.x, sp.y);
+                grass.push(symObj);
+              } else if(mode==='sierpinski'){
+                symObj = createSierpinskiFromUI(sp.x, sp.y);
+                sierpinskiGaskets.push(symObj);
+              } else if(mode==='dragon'){
+                symObj = createDragonFromUI(sp.x, sp.y);
+                dragonCurves.push(symObj);
+              } else if(mode==='texture'){
+                symObj = createTextureFromUI(sp.x, sp.y);
+                textures.push(symObj);
+              }
+
+              if (symObj) {
+                  scene.push({type: mode, data: symObj});
+              }
+          }
+      }
+
       scene.push(newOp);
       pushHistory();
       if (!isAnimating()) {
@@ -782,7 +937,7 @@ const randomizeTreeBtn = document.getElementById('randomizeTreeBtn');
 
 if (undoBtn) undoBtn.addEventListener('click', undo);
 if (redoBtn) redoBtn.addEventListener('click', redo);
-if (clearBtn) clearBtn.addEventListener('click', ()=>{ scene=[]; trees=[]; ferns=[]; paths=[]; mountains=[]; celestials=[]; snowflakes=[]; flowers=[]; vines=[]; clouds=[]; lightning=[]; grass=[]; sierpinskiGaskets=[]; dragonCurves=[]; eraserStrokes=[]; selectedTreeIndex=null; selectedLevelIndex=null; pushHistory(); if (!isAnimating()) redrawAll(); updateObjectCount(); if (typeof gtag === 'function') gtag('event', 'clear_canvas'); });
+if (clearBtn) clearBtn.addEventListener('click', ()=>{ scene=[]; trees=[]; ferns=[]; paths=[]; mountains=[]; celestials=[]; snowflakes=[]; flowers=[]; vines=[]; clouds=[]; lightning=[]; grass=[]; sierpinskiGaskets=[]; dragonCurves=[]; textures=[]; eraserStrokes=[]; selectedTreeIndex=null; selectedLevelIndex=null; pushHistory(); if (!isAnimating()) redrawAll(); updateObjectCount(); if (typeof gtag === 'function') gtag('event', 'clear_canvas'); });
 if (saveBtn) saveBtn.addEventListener('click', ()=>{ const out = document.createElement('canvas'); out.width = treeCanvas.width; out.height = treeCanvas.height; const octx = out.getContext('2d'); drawBackground(octx); octx.drawImage(treeCanvas,0,0); const link = document.createElement('a'); link.download=`fractal-forest_${getDateTimeStamp()}.png`; link.href = out.toDataURL('image/png'); link.click(); if (typeof gtag === 'function') gtag('event', 'save_artwork', { 'format': 'png' }); });
 if (playbackBtn) playbackBtn.addEventListener('click', playHistory);
 if (exportSessionBtn) exportSessionBtn.addEventListener('click', exportSession);
@@ -1032,6 +1187,7 @@ function buildSVG(){
   parts.push(`<g id="grass" stroke-linecap="round" stroke-linejoin="round" fill="none">`); for (const g of grass){ parts.push(`<g class="grass" opacity="${g.alpha ?? 1}" stroke="${escapeAttr(g.color || '#4a7c59')}">`); for (const blade of g.blades){ parts.push(`<path d="M${blade.x1},${blade.y1} Q${blade.cpx},${blade.cpy} ${blade.x2},${blade.y2}" stroke-width="${blade.thickness}"/>`); } parts.push(`</g>`); } parts.push(`</g>`);
   parts.push(`<g id="sierpinski" stroke-linecap="round" stroke-linejoin="round">`); for (const gasket of sierpinskiGaskets){ const fillOrStroke = gasket.filled ? `fill="${escapeAttr(gasket.color || '#00ffff')}"` : `fill="none" stroke="${escapeAttr(gasket.color || '#00ffff')}" stroke-width="${gasket.stroke || 1}"`; parts.push(`<g class="sierpinski" opacity="${gasket.alpha ?? 1}" ${fillOrStroke}>`); for (const [p1, p2, p3] of gasket.triangles){ parts.push(`<polygon points="${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}"/>`); } parts.push(`</g>`); } parts.push(`</g>`);
   parts.push(`<g id="dragon" stroke-linecap="round" stroke-linejoin="round" fill="none">`); for (const dragon of dragonCurves){ if (dragon.segments.length > 0){ const pathData = `M${dragon.segments[0].x1},${dragon.segments[0].y1} ${dragon.segments.map(s => `L${s.x2},${s.y2}`).join(' ')}`; parts.push(`<path class="dragon" d="${pathData}" stroke="${escapeAttr(dragon.color || '#ff1493')}" stroke-width="${dragon.stroke || 2}" opacity="${dragon.alpha ?? 1}"/>`); } } parts.push(`</g>`);
+  parts.push(`<g id="textures" stroke-linecap="round" stroke-linejoin="round">`); for (const tex of textures){ parts.push(`<g class="texture" stroke="${escapeAttr(tex.color || '#ffffff')}" fill="${escapeAttr(tex.color || '#ffffff')}" stroke-width="${tex.strokeWidth || 1}" opacity="${tex.alpha ?? 1}">`); for (const elem of tex.elements){ const elemAlpha = elem.alpha != null ? elem.alpha : 1.0; const totalAlpha = (tex.alpha ?? 1) * elemAlpha; if (elem.type === 'dot'){ parts.push(`<circle cx="${elem.x}" cy="${elem.y}" r="${elem.size}" opacity="${totalAlpha}"/>`); } else if (elem.type === 'line'){ parts.push(`<line x1="${elem.x1}" y1="${elem.y1}" x2="${elem.x2}" y2="${elem.y2}" opacity="${totalAlpha}"/>`); } else if (elem.type === 'curve' && elem.points.length > 1){ const pathData = `M${elem.points[0].x},${elem.points[0].y} ${elem.points.slice(1).map(p => `L${p.x},${p.y}`).join(' ')}`; parts.push(`<path d="${pathData}" fill="none" opacity="${totalAlpha}"/>`); } else if (elem.type === 'arc'){ parts.push(`<path d="M${elem.x - elem.size/2},${elem.y} A${elem.size/2},${elem.size/2} 0 0,1 ${elem.x + elem.size/2},${elem.y}" fill="none" opacity="${totalAlpha}"/>`); } else if (elem.type === 'polygon' && elem.points.length > 1){ const pointsStr = elem.points.map(p => `${p.x},${p.y}`).join(' '); if (elem.filled){ parts.push(`<polygon points="${pointsStr}" opacity="${totalAlpha}"/>`); } else { parts.push(`<polygon points="${pointsStr}" fill="none" opacity="${totalAlpha}"/>`); } } } parts.push(`</g>`); } parts.push(`</g>`);
   parts.push(`<g id="trees" stroke-linecap="round" stroke-linejoin="round" fill="none">`);
   for (const t of trees) {
       const rand = mulberry32(t.rngSeed);

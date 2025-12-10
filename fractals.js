@@ -933,3 +933,261 @@ function drawDragonCurve(ctx, dragon) {
 
     ctx.restore();
 }
+
+/* ===================== Texture Brush Functions ===================== */
+function buildTexture(texture) {
+    const rand = mulberry32(texture.rngSeed);
+    const { cx, cy, brushSize, density, scale, rotation, randomness, type } = texture;
+    const radius = brushSize / 2;
+
+    texture.elements = [];
+
+    switch(type) {
+        case 'stipple':
+            buildStippleTexture(texture, rand, radius);
+            break;
+        case 'hatch':
+            buildHatchTexture(texture, rand, radius, rotation);
+            break;
+        case 'crosshatch':
+            buildCrossHatchTexture(texture, rand, radius, rotation);
+            break;
+        case 'bark':
+            buildBarkTexture(texture, rand, radius);
+            break;
+        case 'scales':
+            buildScalesTexture(texture, rand, radius);
+            break;
+        case 'fur':
+            buildFurTexture(texture, rand, radius);
+            break;
+        case 'ripples':
+            buildRipplesTexture(texture, rand, radius);
+            break;
+        case 'stone':
+            buildStoneTexture(texture, rand, radius);
+            break;
+    }
+}
+
+function buildStippleTexture(texture, rand, radius) {
+    const count = Math.floor(texture.density * 200);
+    for (let i = 0; i < count; i++) {
+        const angle = rand() * Math.PI * 2;
+        const dist = Math.sqrt(rand()) * radius;
+        const x = texture.cx + Math.cos(angle) * dist;
+        const y = texture.cy + Math.sin(angle) * dist;
+        const size = texture.scale * (0.5 + rand() * texture.randomness);
+        texture.elements.push({ type: 'dot', x, y, size });
+    }
+}
+
+function buildHatchTexture(texture, rand, radius, rotation) {
+    const spacing = 5 / texture.density;
+    const angleRad = (rotation * Math.PI) / 180;
+    const count = Math.floor((radius * 2) / spacing);
+
+    for (let i = -count; i <= count; i++) {
+        const offset = i * spacing;
+        const perpX = -Math.sin(angleRad);
+        const perpY = Math.cos(angleRad);
+
+        const cx = texture.cx + perpX * offset;
+        const cy = texture.cy + perpY * offset;
+
+        const dx = Math.cos(angleRad) * radius;
+        const dy = Math.sin(angleRad) * radius;
+
+        const jitter = (rand() - 0.5) * texture.randomness * spacing;
+
+        texture.elements.push({
+            type: 'line',
+            x1: cx - dx + jitter,
+            y1: cy - dy,
+            x2: cx + dx + jitter,
+            y2: cy + dy
+        });
+    }
+}
+
+function buildCrossHatchTexture(texture, rand, radius, rotation) {
+    buildHatchTexture(texture, rand, radius, rotation);
+    const elementCount = texture.elements.length;
+    buildHatchTexture(texture, rand, radius, rotation + 90);
+    // Make second layer slightly lighter
+    for (let i = elementCount; i < texture.elements.length; i++) {
+        texture.elements[i].alpha = 0.6;
+    }
+}
+
+function buildBarkTexture(texture, rand, radius) {
+    const count = Math.floor(texture.density * 15);
+    for (let i = 0; i < count; i++) {
+        const xOffset = (rand() - 0.5) * radius * 2;
+        const baseX = texture.cx + xOffset;
+        const baseY = texture.cy - radius;
+        const height = radius * 2 * texture.scale;
+        const waveCount = 2 + Math.floor(rand() * 3);
+
+        const points = [];
+        for (let j = 0; j <= waveCount * 2; j++) {
+            const t = j / (waveCount * 2);
+            const y = baseY + t * height;
+            const wave = Math.sin(j * Math.PI) * 3 * texture.randomness;
+            const x = baseX + wave;
+            points.push({ x, y });
+        }
+
+        texture.elements.push({ type: 'curve', points });
+    }
+}
+
+function buildScalesTexture(texture, rand, radius) {
+    const scaleSize = 10 * texture.scale;
+    const rows = Math.floor((radius * 2) / (scaleSize * 0.7));
+    const cols = Math.floor((radius * 2) / scaleSize);
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const xOffset = (row % 2) * scaleSize * 0.5;
+            const x = texture.cx - radius + col * scaleSize + xOffset;
+            const y = texture.cy - radius + row * scaleSize * 0.7;
+
+            const dist = Math.sqrt((x - texture.cx) ** 2 + (y - texture.cy) ** 2);
+            if (dist > radius) continue;
+
+            const size = scaleSize * (0.8 + rand() * 0.4 * texture.randomness);
+            texture.elements.push({ type: 'arc', x, y, size });
+        }
+    }
+}
+
+function buildFurTexture(texture, rand, radius) {
+    const count = Math.floor(texture.density * 150);
+    for (let i = 0; i < count; i++) {
+        const angle = rand() * Math.PI * 2;
+        const dist = Math.sqrt(rand()) * radius;
+        const x = texture.cx + Math.cos(angle) * dist;
+        const y = texture.cy + Math.sin(angle) * dist;
+
+        const hairAngle = angle + (rand() - 0.5) * texture.randomness * Math.PI;
+        const hairLength = 8 * texture.scale * (0.5 + rand() * 0.5);
+
+        const x2 = x + Math.cos(hairAngle) * hairLength;
+        const y2 = y + Math.sin(hairAngle) * hairLength;
+
+        texture.elements.push({ type: 'line', x1: x, y1: y, x2, y2 });
+    }
+}
+
+function buildRipplesTexture(texture, rand, radius) {
+    const count = Math.floor(5 + texture.density * 5);
+    for (let i = 0; i < count; i++) {
+        const r = (i / count) * radius;
+        const points = [];
+        const segments = 64;
+        const waveAmp = 2 * texture.scale * (1 + rand() * texture.randomness);
+        const waveFreq = 8;
+
+        for (let j = 0; j <= segments; j++) {
+            const angle = (j / segments) * Math.PI * 2;
+            const wave = Math.sin(angle * waveFreq) * waveAmp;
+            const dist = r + wave;
+            const x = texture.cx + Math.cos(angle) * dist;
+            const y = texture.cy + Math.sin(angle) * dist;
+            points.push({ x, y });
+        }
+
+        texture.elements.push({ type: 'polygon', points });
+    }
+}
+
+function buildStoneTexture(texture, rand, radius) {
+    const count = Math.floor(texture.density * 20);
+    for (let i = 0; i < count; i++) {
+        const angle = rand() * Math.PI * 2;
+        const dist = Math.sqrt(rand()) * radius;
+        const cx = texture.cx + Math.cos(angle) * dist;
+        const cy = texture.cy + Math.sin(angle) * dist;
+
+        const sides = 4 + Math.floor(rand() * 3);
+        const size = 8 * texture.scale * (0.5 + rand() * 0.5);
+        const points = [];
+
+        for (let j = 0; j < sides; j++) {
+            const a = (j / sides) * Math.PI * 2 + rand() * texture.randomness;
+            const r = size * (0.8 + rand() * 0.4 * texture.randomness);
+            points.push({
+                x: cx + Math.cos(a) * r,
+                y: cy + Math.sin(a) * r
+            });
+        }
+
+        texture.elements.push({ type: 'polygon', points, filled: true });
+    }
+}
+
+function drawTexture(ctx, texture) {
+    ctx.save();
+    ctx.strokeStyle = texture.color || '#ffffff';
+    ctx.fillStyle = texture.color || '#ffffff';
+    ctx.lineWidth = texture.strokeWidth || 1;
+    ctx.globalAlpha = texture.alpha != null ? texture.alpha : 1.0;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (const elem of texture.elements) {
+        const alpha = elem.alpha != null ? elem.alpha : 1.0;
+        ctx.globalAlpha = (texture.alpha != null ? texture.alpha : 1.0) * alpha;
+
+        switch(elem.type) {
+            case 'dot':
+                ctx.beginPath();
+                ctx.arc(elem.x, elem.y, elem.size, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+
+            case 'line':
+                ctx.beginPath();
+                ctx.moveTo(elem.x1, elem.y1);
+                ctx.lineTo(elem.x2, elem.y2);
+                ctx.stroke();
+                break;
+
+            case 'curve':
+                if (elem.points.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(elem.points[0].x, elem.points[0].y);
+                    for (let i = 1; i < elem.points.length; i++) {
+                        ctx.lineTo(elem.points[i].x, elem.points[i].y);
+                    }
+                    ctx.stroke();
+                }
+                break;
+
+            case 'arc':
+                ctx.beginPath();
+                ctx.arc(elem.x, elem.y, elem.size / 2, 0, Math.PI);
+                ctx.stroke();
+                break;
+
+            case 'polygon':
+                if (elem.points.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(elem.points[0].x, elem.points[0].y);
+                    for (let i = 1; i < elem.points.length; i++) {
+                        ctx.lineTo(elem.points[i].x, elem.points[i].y);
+                    }
+                    ctx.closePath();
+                    if (elem.filled) {
+                        ctx.fill();
+                    } else {
+                        ctx.stroke();
+                    }
+                }
+                break;
+        }
+    }
+
+    ctx.restore();
+}

@@ -36,6 +36,27 @@
             <button id="exportSvgBtn" class="action">Export SVG</button>
           </div>
     
+          <div id="symmetrySection" style="margin-bottom: 12px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05);">
+            <label style="display: block; margin-bottom: 6px;">
+                <input type="checkbox" id="enableSymmetry" title="Enable symmetrical duplication of all drawn objects."> Enable Symmetry
+            </label>
+            <div id="symmetryControls" style="display:none;">
+                <label class="row" for="symmetryType">Symmetry Type</label>
+                <select id="symmetryType">
+                    <option value="mirrorH">Mirror Horizontal</option>
+                    <option value="mirrorV">Mirror Vertical</option>
+                    <option value="mirrorBoth">Mirror Both (4-way)</option>
+                    <option value="radial">Radial</option>
+                </select>
+                <div id="radialCountControls" style="display:none; margin-top: 6px;">
+                    <div class="param-row"><label for="radialCount">Radial Count</label><input id="radialCountValue" type="number" min="2" max="12" value="6"></div>
+                    <input id="radialCount" type="range" min="2" max="12" value="6" title="Number of radial copies around the center point.">
+                </div>
+                <button id="setSymmetryCenterBtn" class="action" style="width: 100%; margin-top: 6px; display: none;">Click Canvas to Set Center</button>
+                <div id="symmetryCenterDisplay" class="small hint" style="margin-top: 4px; display: none;"></div>
+            </div>
+          </div>
+
           <label class="row" for="modeSelect">Mode</label>
           <select id="modeSelect">
             <option value="tree">Tree</option>
@@ -51,6 +72,7 @@
             <option value="grass">Grass</option>
             <option value="sierpinski">Sierpinski Gasket</option>
             <option value="dragon">Dragon Curve</option>
+            <option value="texture">Texture Brush</option>
             <option value="eraser">Eraser</option>
           </select>
     
@@ -294,6 +316,32 @@
               <input id="dragonStep" type="range" min="1" max="20" value="5" title="Length of each step in pixels.">
               <div class="param-row"><label for="dragonStroke">Line Width</label><input id="dragonStrokeValue" type="number" min="0.5" max="10" step="0.1" value="2"></div>
               <input id="dragonStroke" type="range" min="0.5" max="10" step="0.1" value="2" title="The width of the dragon curve line.">
+            </div>
+
+            <div id="textureParams" style="display:none">
+              <label class="row" for="textureType">Texture Type</label>
+              <select id="textureType">
+                <option value="stipple">Stipple/Dots</option>
+                <option value="hatch">Hatching</option>
+                <option value="crosshatch">Cross-Hatch</option>
+                <option value="bark">Bark</option>
+                <option value="scales">Scales</option>
+                <option value="fur">Fur/Hair</option>
+                <option value="ripples">Water Ripples</option>
+                <option value="stone">Stone</option>
+              </select>
+              <div class="param-row"><label for="textureBrushSize">Brush Size</label><input id="textureBrushSizeValue" type="number" min="20" max="300" value="100"></div>
+              <input id="textureBrushSize" type="range" min="20" max="300" value="100" title="The size of each texture stamp.">
+              <div class="param-row"><label for="textureDensity">Density</label><input id="textureDensityValue" type="number" min="0.1" max="2" step="0.1" value="1"></div>
+              <input id="textureDensity" type="range" min="0.1" max="2" step="0.1" value="1" title="How tightly packed the texture elements are.">
+              <div class="param-row"><label for="textureScale">Pattern Scale</label><input id="textureScaleValue" type="number" min="0.5" max="3" step="0.1" value="1"></div>
+              <input id="textureScale" type="range" min="0.5" max="3" step="0.1" value="1" title="Size of individual texture elements.">
+              <div class="param-row"><label for="textureRotation">Rotation</label><input id="textureRotationValue" type="number" min="0" max="180" value="0"></div>
+              <input id="textureRotation" type="range" min="0" max="180" value="0" title="Pattern orientation in degrees.">
+              <div class="param-row"><label for="textureRandomness">Randomness</label><input id="textureRandomnessValue" type="number" min="0" max="1" step="0.1" value="0.3"></div>
+              <input id="textureRandomness" type="range" min="0" max="1" step="0.1" value="0.3" title="Amount of variation in the pattern.">
+              <div class="param-row"><label for="textureStroke">Line Width</label><input id="textureStrokeValue" type="number" min="0.5" max="5" step="0.1" value="1"></div>
+              <input id="textureStroke" type="range" min="0.5" max="5" step="0.1" value="1" title="Width of lines in the texture pattern.">
             </div>
 
             <div id="otherScaleControls" style="margin-top:10px">

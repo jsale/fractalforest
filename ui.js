@@ -220,6 +220,29 @@ const dragonStepValueEl = document.getElementById('dragonStepValue');
 const dragonStrokeEl = document.getElementById('dragonStroke');
 const dragonStrokeValueEl = document.getElementById('dragonStrokeValue');
 
+const enableSymmetryEl = document.getElementById('enableSymmetry');
+const symmetryControlsEl = document.getElementById('symmetryControls');
+const symmetryTypeEl = document.getElementById('symmetryType');
+const radialCountEl = document.getElementById('radialCount');
+const radialCountValueEl = document.getElementById('radialCountValue');
+const radialCountControlsEl = document.getElementById('radialCountControls');
+const setSymmetryCenterBtnEl = document.getElementById('setSymmetryCenterBtn');
+const symmetryCenterDisplayEl = document.getElementById('symmetryCenterDisplay');
+
+const textureTypeEl = document.getElementById('textureType');
+const textureBrushSizeEl = document.getElementById('textureBrushSize');
+const textureBrushSizeValueEl = document.getElementById('textureBrushSizeValue');
+const textureDensityEl = document.getElementById('textureDensity');
+const textureDensityValueEl = document.getElementById('textureDensityValue');
+const textureScaleEl = document.getElementById('textureScale');
+const textureScaleValueEl = document.getElementById('textureScaleValue');
+const textureRotationEl = document.getElementById('textureRotation');
+const textureRotationValueEl = document.getElementById('textureRotationValue');
+const textureRandomnessEl = document.getElementById('textureRandomness');
+const textureRandomnessValueEl = document.getElementById('textureRandomnessValue');
+const textureStrokeEl = document.getElementById('textureStroke');
+const textureStrokeValueEl = document.getElementById('textureStrokeValue');
+
 /* ===================== Mobile Menu Toggle ===================== */
 function toggleMenu() {
     controls.classList.toggle('is-visible');
@@ -283,6 +306,10 @@ const bindings = [
     ['sierpinskiStroke', 'sierpinskiStrokeValue'],
     ['dragonIterations', 'dragonIterationsValue'], ['dragonStep', 'dragonStepValue'],
     ['dragonStroke', 'dragonStrokeValue'],
+    ['radialCount', 'radialCountValue'],
+    ['textureBrushSize', 'textureBrushSizeValue'], ['textureDensity', 'textureDensityValue'],
+    ['textureScale', 'textureScaleValue'], ['textureRotation', 'textureRotationValue'],
+    ['textureRandomness', 'textureRandomnessValue'], ['textureStroke', 'textureStrokeValue'],
     ['otherScaleMin', 'otherScaleMinValue'], ['otherScaleMax', 'otherScaleMaxValue'],
     ['eraserSize', 'eraserSizeValue'],
     ['newObjectAlphaSlider', 'newObjectAlphaValue'], ['levelAlpha', 'levelAlphaValue'],
@@ -320,6 +347,7 @@ function updateModeUI(){
   show('grassParams',  mode==='grass');
   show('sierpinskiParams', mode==='sierpinski');
   show('dragonParams', mode==='dragon');
+  show('textureParams', mode==='texture');
   show('eraserParams', mode==='eraser');
 
   if(levelEditBox) levelEditBox.style.display = (mode==='tree') ? levelEditBox.style.display : 'none';
@@ -567,4 +595,37 @@ if (levelAlphaEl){
   levelAlphaEl.addEventListener('change', () => {
       pushHistory();
   });
+}
+
+/* ===================== Symmetry Controls ===================== */
+if (enableSymmetryEl) {
+    enableSymmetryEl.addEventListener('change', () => {
+        symmetryEnabled = enableSymmetryEl.checked;
+        if (symmetryControlsEl) symmetryControlsEl.style.display = symmetryEnabled ? 'block' : 'none';
+    });
+}
+
+if (symmetryTypeEl) {
+    symmetryTypeEl.addEventListener('change', () => {
+        symmetryType = symmetryTypeEl.value;
+        if (radialCountControlsEl) {
+            radialCountControlsEl.style.display = (symmetryType === 'radial') ? 'block' : 'none';
+        }
+        if (setSymmetryCenterBtnEl) {
+            setSymmetryCenterBtnEl.style.display = (symmetryType === 'radial') ? 'block' : 'none';
+        }
+    });
+}
+
+if (radialCountEl) {
+    radialCountEl.addEventListener('input', () => {
+        radialCount = parseInt(radialCountEl.value, 10);
+    });
+}
+
+if (setSymmetryCenterBtnEl) {
+    setSymmetryCenterBtnEl.addEventListener('click', () => {
+        settingSymmetryCenter = true;
+        setSymmetryCenterBtnEl.textContent = 'Click on canvas...';
+    });
 }
